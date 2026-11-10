@@ -6,6 +6,10 @@ This is a public demo of a tool I built for a physiotherapy clinic in Dublin. Th
 
 ## Try it
 
+**Live demo: [cian-email-triage.vercel.app](https://cian-email-triage.vercel.app)**, no sign-up needed.
+
+Or run it locally:
+
 ```
 npm install
 npm run dev
