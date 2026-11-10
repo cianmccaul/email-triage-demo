@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --color-ink: #15343a;
+  --color-muted: #5b7479;
+  --color-teal: #17777c;
+  --color-teal-dark: #11595d;
+  --color-line: #cfdcdd;
+  --color-line-soft: #e1eaea;
+  --color-well: #f3f7f7;
+  --color-ok-bg: #dcefe6;
+  --color-ok: #1d5640;
+  --color-warn-bg: #fbebc9;
+  --color-warn: #6b4200;
+  --color-bad-bg: #f8deda;
+  --color-bad: #842a1d;
+  --color-violet-bg: #e7e3fb;
+  --color-violet: #4b3f99;
+}
+
+/* Set on html only: a body background would paint over the colour wash. */
+html {
+  background: #eaf0f1;
+  color: var(--color-ink);
+}
+
+/* Soft colour wash behind the app */
+.wash {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.wash span {
+  position: absolute;
+  border-radius: 50%;
+}
+.wash .a { width: 640px; height: 640px; left: -160px; top: -200px; background: #9ed9d3; filter: blur(100px); opacity: 0.8; }
+.wash .b { width: 560px; height: 560px; right: -120px; top: 80px; background: #c9c2f2; filter: blur(110px); opacity: 0.65; }
+.wash .c { width: 520px; height: 520px; left: 30%; bottom: -260px; background: #ffd9c2; filter: blur(110px); opacity: 0.6; }
+
+@layer components {
+  .glass {
+    background: rgb(255 255 255 / 0.55);
+    border: 1px solid rgb(255 255 255 / 0.85);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+  .panel {
+    background: rgb(255 255 255 / 0.93);
+    border: 1px solid #fff;
+    box-shadow: 0 10px 36px rgb(30 60 70 / 0.1);
+  }
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  /* Use as class="btn btn-primary" / "btn btn-secondary" */
+  .btn-primary {
+    @apply bg-teal text-white hover:bg-teal-dark;
+  }
+  .btn-secondary {
+    @apply border border-line bg-white text-ink hover:shadow-[0_1px_4px_rgb(30_60_70/0.12)];
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap;
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-teal focus:ring-3 focus:ring-teal/20;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid rgb(23 119 124 / 0.45);
+  outline-offset: 2px;
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .arrive { animation: arrive 0.35s ease-out both; }
+}
