@@ -14,7 +14,7 @@ This is a public demo of a tool I built for a physiotherapy clinic in Dublin. Th
 
 ## Run it locally
 
-The live demo needs no sign-up. It currently sorts with the built-in rules (the badge at the top of the app says which sorter is running). To run it yourself:
+The live demo needs no sign-up. The badge at the top of the app says which sorter is running. To run it yourself:
 
 ```
 npm install
@@ -26,6 +26,14 @@ Open http://localhost:3000. **No API keys needed.** Without a key, a built-in ru
 ```
 GROQ_API_KEY=your-key
 ```
+
+Optional settings (see `.env.example`):
+
+| Variable | Default | What it does |
+|---|---|---|
+| `AI_ENABLED` | on | `false` switches the AI off without removing the key, so the built-in rules do everything |
+| `AI_DAILY_LIMIT` | `20` | AI calls each visitor gets per day (sorting and learning both count) |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Any Groq chat model that supports JSON output |
 
 ### Things to try
 
@@ -60,6 +68,8 @@ staff edit + send ──► /api/learn ──► what did they add? ──► ne
 
 **Replies only use facts from the handbook.** The handbook is editable in the app, so changing a price or opening time changes future AI drafts.
 
+**AI use is limited, so one visitor can't use up the free tier for everyone.** Each visitor gets `AI_DAILY_LIMIT` AI calls a day (20 by default), tracked with an anonymous cookie, and each IP address gets three visitors' worth, so clearing cookies doesn't reset it. When Groq says its quota is used up, AI pauses for everyone until Groq's retry time. Either way, the built-in rules take over and the app says why. The counts are kept in the server's memory, so this is best effort: a restart clears them, and separate server instances count separately. Groq's own quota is the hard limit behind it.
+
 **The demo state lives in the browser.** It's saved to localStorage, so it survives a refresh. **Reset demo** starts again.
 
 ## Project structure
@@ -81,10 +91,12 @@ src/
     triage/ai.ts           prompt, and validation of the AI's answer
     triage/index.ts        AI first, rules as fallback, safety check always
     learn.ts               learning from edits, with and without AI
+    ai-limits.ts           kill switch, per-visitor daily limit, pause when Groq's quota runs out
+    visitor.ts             the anonymous visitor cookie used for the limit
     handbook.ts            the fictional clinic's facts
     sample-inbox.ts        the morning's sample emails
     test-emails.ts         the test emails and where each should land
-tests/                     Vitest: sorter, safety, AI parsing, learning
+tests/                     Vitest: sorter, safety, AI parsing, learning, AI limits
 ```
 
 ## Tests
@@ -93,7 +105,7 @@ tests/                     Vitest: sorter, safety, AI parsing, learning
 npm test
 ```
 
-37 tests (Vitest, in `tests/rules.test.ts` and `tests/ai-parse.test.ts`), including one that checks **every test email and sample email lands in its expected folder**, so a change to the sorter that breaks a case fails straight away.
+51 tests (Vitest, in `tests/rules.test.ts`, `tests/ai-parse.test.ts` and `tests/ai-limits.test.ts`), including one that checks **every test email and sample email lands in its expected folder**, so a change to the sorter that breaks a case fails straight away.
 
 ## Built with
 
