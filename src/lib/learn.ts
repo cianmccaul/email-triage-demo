@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { aiEnabled, chatJson } from "./groq";
+import { type AiAccess, noteQuotaHit } from "./ai-limits";
+import { aiEnabled, chatJson, GroqError } from "./groq";
+import type { AiFallback } from "./types";
 
 /**
  * When staff edit a draft before sending, work out what they changed and
@@ -33,10 +35,17 @@ export function learnWithoutAi(original: string, edited: string): string | null 
   return `When relevant, include: "${sentence}"`;
 }
 
-export async function learnFromEdit(original: string, edited: string): Promise<{ rule: string | null; source: "ai" | "rules" }> {
+export async function learnFromEdit(
+  original: string,
+  edited: string,
+  ai: () => AiAccess = () => ({ allowed: aiEnabled() }),
+): Promise<{ rule: string | null; source: "ai" | "rules"; fallback?: AiFallback }> {
   if (original.trim() === edited.trim()) return { rule: null, source: "rules" };
 
-  if (aiEnabled()) {
+  // Only asked here, so an unchanged draft never uses up an AI call.
+  const access = ai();
+  let fallback: AiFallback | undefined = access.allowed ? undefined : access.fallback;
+  if (access.allowed) {
     try {
       const raw = await chatJson(
         `You help train a clinic's email assistant. Compare the assistant's draft with the version staff actually sent.
@@ -49,8 +58,14 @@ Reply with JSON only: {"rule": "<rule or empty string>"}`,
       const parsed = LearnResponse.safeParse(JSON.parse(raw));
       if (parsed.success) return { rule: parsed.data.rule.trim() || null, source: "ai" };
     } catch (err) {
-      console.error("AI learning failed, using rules:", err instanceof Error ? err.message : err);
+      if (err instanceof GroqError && err.status === 429) {
+        noteQuotaHit(err.retryAfterSeconds);
+        fallback = "quota";
+      } else {
+        console.error("AI learning failed, using rules:", err instanceof Error ? err.message : err);
+      }
     }
   }
-  return { rule: learnWithoutAi(original, edited), source: "rules" };
+  const rule = learnWithoutAi(original, edited);
+  return fallback ? { rule, source: "rules", fallback } : { rule, source: "rules" };
 }
