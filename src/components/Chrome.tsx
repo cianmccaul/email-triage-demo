@@ -3,10 +3,10 @@
 import { FOLDERS } from "@/lib/folders";
 import { CLINIC } from "@/lib/handbook";
 import { Spinner } from "./bits";
-import { useInbox, type View } from "./InboxProvider";
+import { AI_FALLBACK_TEXT, useInbox, type View } from "./InboxProvider";
 
 export function TopBar() {
-  const { mode, sortingCount, setView, reset } = useInbox();
+  const { mode, aiNotice, sortingCount, setView, reset } = useInbox();
   return (
     <header className="glass flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[20px] py-2 pr-2.5 pl-4 shadow-[0_8px_30px_rgb(30_60_70/0.1)]">
       <div className="flex items-center gap-2.5">
@@ -26,7 +26,7 @@ export function TopBar() {
           </span>
         ) : mode ? (
           <span className="pill bg-white text-muted border border-line-soft">
-            {mode === "ai" ? "Sorting with AI (Llama via Groq)" : "Sorting with built-in rules"}
+            {mode === "ai" ? "Sorting with AI (Llama via Groq)" : aiNotice ? AI_FALLBACK_TEXT[aiNotice].badge : "Sorting with built-in rules"}
           </span>
         ) : null}
       </div>

@@ -16,7 +16,12 @@ export interface Triage {
   source: "ai" | "rules";
   /** True when a safety keyword (numbness, chest pain, ...) forced it into Priority. */
   redFlag: boolean;
+  /** Set when AI was wanted but the built-in rules stepped in: see lib/ai-limits.ts. */
+  fallback?: AiFallback;
 }
+
+/** Why the built-in rules stood in for the AI: today's limit for this visitor, or Groq's quota. */
+export type AiFallback = "limit" | "quota";
 
 export type EmailStatus = "sorting" | "open" | "sent";
 

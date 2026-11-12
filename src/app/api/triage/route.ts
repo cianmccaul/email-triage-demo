@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { aiAccess } from "@/lib/ai-limits";
 import { triageEmail } from "@/lib/triage";
+import { visitorFrom, withVisitorCookie } from "@/lib/visitor";
 
 const Body = z.object({
   email: z.object({
@@ -21,6 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
   const { email, handbook, rules } = parsed.data;
-  const triage = await triageEmail(email, handbook, rules);
-  return NextResponse.json(triage);
+  const visitor = visitorFrom(req);
+  const triage = await triageEmail(email, handbook, rules, () => aiAccess(visitor));
+  return withVisitorCookie(NextResponse.json(triage), visitor);
 }

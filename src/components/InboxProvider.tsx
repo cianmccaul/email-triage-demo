@@ -5,7 +5,19 @@ import type { FolderId } from "@/lib/folders";
 import { DEFAULT_HANDBOOK } from "@/lib/handbook";
 import { sampleInbox } from "@/lib/sample-inbox";
 import type { TestEmail } from "@/lib/test-emails";
-import type { Email, LearnedRule, Sender, Triage } from "@/lib/types";
+import type { AiFallback, Email, LearnedRule, Sender, Triage } from "@/lib/types";
+
+/** What to tell the visitor when the built-in rules stand in for the AI (see lib/ai-limits.ts). */
+export const AI_FALLBACK_TEXT: Record<AiFallback, { badge: string; toast: string }> = {
+  limit: {
+    badge: "Today's AI limit reached · sorting with built-in rules",
+    toast: "You've used today's AI sorting for this demo, so the built-in rules are taking over. It resets at midnight, Irish time.",
+  },
+  quota: {
+    badge: "AI busy · sorting with built-in rules",
+    toast: "The AI has hit its free-tier limit for now, so the built-in rules are taking over. Try again in a little while.",
+  },
+};
 
 export type View =
   | { kind: "folder"; folder: FolderId }
@@ -101,6 +113,8 @@ interface InboxApi extends State {
   hydrated: boolean;
   /** "ai" or "rules": which sorter handled the most recent email. */
   mode: Triage["source"] | null;
+  /** Why the rules are standing in for the AI right now, if they are. */
+  aiNotice: AiFallback | null;
   toast: string | null;
   sortingCount: number;
   setView: (view: View) => void;
@@ -122,6 +136,8 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, freshState);
   const [hydrated, setHydrated] = useState(false);
   const [mode, setMode] = useState<InboxApi["mode"]>(null);
+  const [aiNotice, setAiNotice] = useState<AiFallback | null>(null);
+  const aiNoticeRef = useRef<AiFallback | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const inFlight = useRef<string | null>(null);
   const stateRef = useRef(state);
@@ -158,6 +174,17 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
     window.setTimeout(() => setToast((t) => (t === text ? null : t)), 4500);
   }, []);
 
+  // Tell the visitor once when the rules start standing in for the AI, and clear it when the AI is back.
+  const noteAi = useCallback(
+    (source: Triage["source"], fallback: AiFallback | undefined) => {
+      const next = source === "ai" ? null : (fallback ?? aiNoticeRef.current);
+      if (next && next !== aiNoticeRef.current) showToast(AI_FALLBACK_TEXT[next].toast);
+      aiNoticeRef.current = next;
+      setAiNotice(next);
+    },
+    [showToast],
+  );
+
   // Sorting queue: one email at a time, so you can watch them land.
   const nextToSort = state.emails.find((e) => e.status === "sorting")?.id ?? null;
   useEffect(() => {
@@ -191,6 +218,7 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
       }
       await new Promise((r) => setTimeout(r, 250)); // a beat, so the arrival is visible
       setMode(triage.source);
+      noteAi(triage.source, triage.fallback);
       dispatch({ type: "triaged", id: email.id, triage });
       inFlight.current = null;
     })();
@@ -211,7 +239,8 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ original, edited }),
           });
-          const data = (await res.json()) as { rule: string | null; source: "ai" | "rules" };
+          const data = (await res.json()) as { rule: string | null; source: "ai" | "rules"; fallback?: AiFallback };
+          if (data.fallback) noteAi(data.source, data.fallback);
           if (data.rule) {
             dispatch({ type: "addRule", rule: { id: uid(), text: data.rule, learnedAt: new Date().toISOString(), source: data.source } });
             showToast(`Reply sent. Learned from your edit: ${data.rule}`);
@@ -223,7 +252,7 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
       }
       showToast("Reply sent.");
     },
-    [showToast],
+    [showToast, noteAi],
   );
 
   const sendTestEmails = useCallback(
@@ -260,6 +289,7 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
       ...state,
       hydrated,
       mode,
+      aiNotice,
       toast,
       sortingCount: state.emails.filter((e) => e.status === "sorting").length,
       setView: (view) => dispatch({ type: "view", view }),
@@ -275,10 +305,12 @@ export function InboxProvider({ children }: { children: React.ReactNode }) {
       reset: () => {
         dispatch({ type: "reset" });
         setMode(null);
+        aiNoticeRef.current = null;
+        setAiNotice(null);
         showToast("Demo reset to a fresh inbox.");
       },
     }),
-    [state, hydrated, mode, toast, send, sendTestEmails, sendCustomEmail, showToast],
+    [state, hydrated, mode, aiNotice, toast, send, sendTestEmails, sendCustomEmail, showToast],
   );
 
   return <InboxContext.Provider value={api}>{children}</InboxContext.Provider>;
