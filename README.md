@@ -1,14 +1,20 @@
 # Inbox triage for a small clinic
 
+Sorts a clinic's inbox into folders, drafts replies from the clinic's handbook, and learns from staff edits.
+
+**[Live demo](https://cian-email-triage.vercel.app)** · **[Portfolio](https://cianmccaul.vercel.app)**
+
+![A patient email about numb fingers sorted into Priority, with the safety check and a draft reply telling them to see a doctor first](docs/screenshot.png)
+
+## What it does
+
 An assistant for a clinic's reception inbox. It sorts each email into **Priority**, **Therapists**, **Admin** or **Spam**, explains why, drafts a reply using the clinic's own handbook, and **learns from the changes staff make** before they press send.
 
 This is a public demo of a tool I built for a physiotherapy clinic in Dublin. The clinic here, **Northbank Physio**, is fictional, and every patient and email in the demo is made up.
 
-## Try it
+## Run it locally
 
-**Live demo: [cian-email-triage.vercel.app](https://cian-email-triage.vercel.app)**, no sign-up needed.
-
-Or run it locally:
+The live demo needs no sign-up. It currently sorts with the built-in rules (the badge at the top of the app says which sorter is running). To run it yourself:
 
 ```
 npm install
@@ -30,7 +36,7 @@ GROQ_API_KEY=your-key
    - A chatty message about parking that also mentions a **numb foot** is a safety issue and goes to Priority.
    - A polite "partnership opportunity" that's really SEO spam.
 3. **Write your own** email as a patient and see where it lands.
-4. **Teach it something.** Open Siobhan's email in Admin, add *"Students get 10% off with a valid student card."* to the draft, and send. The new rule appears in **Clinic handbook** under *Learned from your edits*, and the AI follows it in future drafts.
+4. **Teach it something.** Open Siobhan's email in Admin, add *"Students get 10% off with a valid student card."* to the draft, and send. The new rule appears in **Clinic handbook** under *Learned from your edits*, and the AI follows it in future drafts. (Learning works without a key too, but only AI drafts use the learned rules; the built-in sorter writes its own stock replies.)
 
 ## How it works
 
@@ -87,7 +93,7 @@ tests/                     Vitest: sorter, safety, AI parsing, learning
 npm test
 ```
 
-37 tests, including one that checks **every test email and sample email lands in its expected folder**, so a change to the sorter that breaks a case fails straight away.
+37 tests (Vitest, in `tests/rules.test.ts` and `tests/ai-parse.test.ts`), including one that checks **every test email and sample email lands in its expected folder**, so a change to the sorter that breaks a case fails straight away.
 
 ## Built with
 
