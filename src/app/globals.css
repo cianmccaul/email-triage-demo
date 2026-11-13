@@ -41,6 +41,22 @@ html {
 .wash .b { width: 560px; height: 560px; right: -120px; top: 80px; background: #c9c2f2; filter: blur(110px); opacity: 0.65; }
 .wash .c { width: 520px; height: 520px; left: 30%; bottom: -260px; background: #ffd9c2; filter: blur(110px); opacity: 0.6; }
 
+/* Persistent link back to the portfolio. In normal flow, so it never covers content. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  margin-left: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.back-link:hover { color: var(--color-teal-dark); text-decoration: underline; }
+.back-link:focus-visible { outline: 3px solid var(--color-teal); outline-offset: -3px; border-radius: 8px; }
+
 @layer components {
   .glass {
     background: rgb(255 255 255 / 0.55);

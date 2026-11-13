@@ -16,6 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="b" />
           <span className="c" />
         </div>
+        <a className="back-link" href="https://cianmccaul.vercel.app">
+          <span aria-hidden="true">←</span> Back to portfolio
+        </a>
         {children}
       </body>
     </html>
